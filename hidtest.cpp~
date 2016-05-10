@@ -80,10 +80,6 @@ int main(int argc, char* argv[])
 		printf("unable to open device\n");
  		return 1;
 	}
-	else
-	{
-		printf("mice found.\n");
-	}
 	l6dof_t* mydev = l6dof_open();
 	if (mydev == NULL)
 	{

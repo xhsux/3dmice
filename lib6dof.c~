@@ -1,6 +1,8 @@
 #include "lib6dof.h"
 #include "hidapi.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 struct l6dof_ctx {
   hid_device* dev;
@@ -13,7 +15,7 @@ l6dof_t* l6dof_open(void) {
   unsigned short product_ids[] = {0xc625,0xc626,0xc627,0xc62f,0x0};
   unsigned short *product_id = product_ids;
   while(dev==NULL) {
-    dev=hid_open(0x046d,*(product_id++),NULL);
+    dev=hid_open(0x256f,*(product_id++),NULL);
     if(*product_id==0x0) break;
   }
   if(dev) {
@@ -37,19 +39,21 @@ void l6dof_button_callback(l6dof_t* ctx, l6dof_button_cb_t button_cb) {
 }
 
 void l6dof_check_for_events(l6dof_t* ctx) {
-  unsigned char hidbuf[8];
-  while(hid_read(ctx->dev,hidbuf,7)>0) {
+  unsigned char hidbuf[20];
+  while(hid_read(ctx->dev,hidbuf,sizeof(hidbuf))>0) {
     signed short input[6]={0,0,0,0,0,0};
     //l6dof_axis_t axis=3;
-    int axis=3;
-    switch(hidbuf[0]) {
+    int axis=0;
     switch(hidbuf[0]) {
       case 1:
         axis=0;
       case 2:
-        input[axis++] = hidbuf[1] | ((hidbuf[2])<<8);
-        input[axis++] = hidbuf[3] | ((hidbuf[4])<<8);
-        input[axis]   = hidbuf[5] | ((hidbuf[6])<<8);
+        input[0] = hidbuf[1] | ((hidbuf[2])<<8);
+        input[1] = hidbuf[3] | ((hidbuf[4])<<8);
+        input[2] = hidbuf[5] | ((hidbuf[6])<<8);
+		input[3] = hidbuf[7] | ((hidbuf[8])<<8);
+        input[4] = hidbuf[9] | ((hidbuf[10])<<8);
+		input[5] = hidbuf[11] | ((hidbuf[12])<<8);
         if(ctx->axis_cb) {
           for(axis=0;axis<6;axis++) {
             if(input[axis]) {
@@ -63,6 +67,9 @@ void l6dof_check_for_events(l6dof_t* ctx) {
           ctx->button_cb(hidbuf[1],hidbuf[2]);
         }
         break;
+	  case 17:
+		memset(input, 0, sizeof(input));
+		break;
     }
   }
 }
